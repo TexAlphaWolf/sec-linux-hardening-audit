@@ -1,0 +1,46 @@
+# Auditing, banners and limits.
+
+[[rule]]
+id = "HA-LOG-001"
+title = "The audit daemon is installed"
+section = "Logging"
+severity = "medium"
+why = "auditd records who did what at the system-call level, which is what you need after an incident."
+fix = "Install auditd (Debian family) or audit (RHEL family) and add rules."
+check = { type = "package", present = { debian = ["auditd"], rhel = ["audit"] } }
+
+[[rule]]
+id = "HA-LOG-002"
+title = "The audit daemon is enabled at boot"
+section = "Logging"
+severity = "medium"
+why = "An installed but disabled audit daemon records nothing."
+fix = "systemctl enable --now auditd. Checked on the running system only."
+check = { type = "service", unit = "auditd.service", state = "enabled" }
+
+[[rule]]
+id = "HA-LOG-003"
+title = "Commands run through sudo get a pseudo-terminal"
+section = "Logging"
+severity = "low"
+why = "'Defaults use_pty' stops a program started by sudo from injecting keystrokes into the user's terminal after sudo exits. Needs root to check."
+fix = "Add 'Defaults use_pty' with visudo to /etc/sudoers or a file in /etc/sudoers.d/."
+check = { type = "file_regex", paths = ["/etc/sudoers", "/etc/sudoers.d/*"], require = '^\s*Defaults\s+([^#\n]*,\s*)?use_pty\b' }
+
+[[rule]]
+id = "HA-LOG-004"
+title = "Core dumps are disabled for users"
+section = "Logging"
+severity = "low"
+why = "Core files can contain secrets."
+fix = "Add '* hard core 0' to /etc/security/limits.conf or a file in /etc/security/limits.d/."
+check = { type = "file_regex", paths = ["/etc/security/limits.conf", "/etc/security/limits.d/*.conf"], require = '^\s*\*\s+hard\s+core\s+0\b' }
+
+[[rule]]
+id = "HA-LOG-005"
+title = "The login banner does not reveal the system"
+section = "Logging"
+severity = "low"
+why = "/etc/issue is shown before login; escape codes such as \\r or \\m print the kernel and hardware, which helps an attacker choose an exploit."
+fix = "Replace /etc/issue and /etc/issue.net with a plain notice without \\r, \\m, \\s, \\v."
+check = { type = "file_regex", paths = ["/etc/issue", "/etc/issue.net"], forbid = '\\[rmsv]' }

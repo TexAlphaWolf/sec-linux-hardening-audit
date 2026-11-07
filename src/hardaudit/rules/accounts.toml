@@ -1,0 +1,78 @@
+# Accounts and password policy for NEW accounts (login.defs). Existing accounts keep their
+# own ageing; fix them with chage.
+
+[[rule]]
+id = "HA-ACC-001"
+title = "No account has an empty password"
+section = "Accounts"
+severity = "high"
+why = "An empty password field means the account can be used without a password."
+fix = "Lock each account with 'passwd -l NAME' or set a password. Needs root to check."
+check = { type = "accounts", test = "empty_password" }
+
+[[rule]]
+id = "HA-ACC-002"
+title = "Only root has user id 0"
+section = "Accounts"
+severity = "high"
+why = "Any account with uid 0 is root under another name."
+fix = "Remove or renumber every other account with uid 0 (check /etc/passwd)."
+check = { type = "accounts", test = "uid0_only_root" }
+
+[[rule]]
+id = "HA-ACC-003"
+title = "Every user id is used by one account"
+section = "Accounts"
+severity = "medium"
+why = "Accounts sharing a uid share files and permissions, which defeats accountability."
+fix = "Give each account its own uid (usermod -u) and fix file ownership."
+check = { type = "accounts", test = "unique_uids" }
+
+[[rule]]
+id = "HA-ACC-004"
+title = "System accounts cannot log in"
+section = "Accounts"
+severity = "medium"
+why = "Service accounts should have /usr/sbin/nologin as shell so a stolen service credential is not an interactive login."
+fix = "usermod -s /usr/sbin/nologin NAME for each account listed."
+check = { type = "accounts", test = "system_shells" }
+
+[[rule]]
+id = "HA-ACC-005"
+title = "New passwords expire within a year"
+section = "Accounts"
+severity = "medium"
+why = "A password that never expires stays valid long after it has leaked."
+fix = "Set 'PASS_MAX_DAYS 365' in /etc/login.defs. It affects new accounts only; existing ones need 'chage -M 365 NAME'."
+check = { type = "config", files = ["/etc/login.defs"], key = "PASS_MAX_DAYS", min = 1, max = 365, default = "99999", last_wins = true }
+apply = { type = "config_line", file = "/etc/login.defs", key = "PASS_MAX_DAYS", value = "365" }
+
+[[rule]]
+id = "HA-ACC-006"
+title = "Passwords cannot be changed again immediately"
+section = "Accounts"
+severity = "low"
+why = "Without a minimum age a user can cycle through passwords to get back to the old one."
+fix = "Set 'PASS_MIN_DAYS 1' in /etc/login.defs (new accounts), 'chage -m 1 NAME' for existing ones."
+check = { type = "config", files = ["/etc/login.defs"], key = "PASS_MIN_DAYS", min = 1, default = "0", last_wins = true }
+apply = { type = "config_line", file = "/etc/login.defs", key = "PASS_MIN_DAYS", value = "1" }
+
+[[rule]]
+id = "HA-ACC-007"
+title = "Users are warned at least a week before a password expires"
+section = "Accounts"
+severity = "low"
+why = "A warning gives the user time to change it before being locked out."
+fix = "Set 'PASS_WARN_AGE 7' in /etc/login.defs (new accounts), 'chage -W 7 NAME' for existing ones."
+check = { type = "config", files = ["/etc/login.defs"], key = "PASS_WARN_AGE", min = 7, default = "-1", last_wins = true }
+apply = { type = "config_line", file = "/etc/login.defs", key = "PASS_WARN_AGE", value = "7" }
+
+[[rule]]
+id = "HA-ACC-008"
+title = "New files are not readable by other users by default"
+section = "Accounts"
+severity = "low"
+why = "A default umask of 022 makes every new file world-readable."
+fix = "Set 'UMASK 027' in /etc/login.defs."
+check = { type = "config", files = ["/etc/login.defs"], key = "UMASK", expect_in = ["027", "077", "0027", "0077"], default = "022", last_wins = true }
+apply = { type = "config_line", file = "/etc/login.defs", key = "UMASK", value = "027" }

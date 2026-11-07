@@ -1,0 +1,103 @@
+# OpenSSH server. Read from /etc/ssh/sshd_config with Include files expanded; the first
+# value found wins and anything after a Match line is ignored. When a key is not set the
+# OpenSSH default is used (stated in each rule). None of these are applied automatically:
+# a wrong SSH setting can lock you out of a remote machine.
+
+[[rule]]
+id = "HA-SSH-001"
+title = "Root cannot log in over SSH with a password"
+section = "SSH"
+severity = "high"
+why = "Root is the account every attacker tries first. Keys only, or no root login at all, removes password guessing against it."
+fix = "Set 'PermitRootLogin no' (or prohibit-password) in /etc/ssh/sshd_config, then run 'sshd -t' and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "PermitRootLogin", expect_in = ["no", "prohibit-password", "without-password", "forced-commands-only"], default = "prohibit-password" }
+
+[[rule]]
+id = "HA-SSH-002"
+title = "SSH password logins are disabled"
+section = "SSH"
+severity = "high"
+why = "Passwords can be guessed and reused; keys cannot be guessed over the network."
+fix = "Set 'PasswordAuthentication no' after confirming your key works from another session, run 'sshd -t', then reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "PasswordAuthentication", expect_in = ["no"], default = "yes" }
+
+[[rule]]
+id = "HA-SSH-003"
+title = "Empty passwords are refused over SSH"
+section = "SSH"
+severity = "high"
+why = "An account with an empty password must never be reachable from the network."
+fix = "Set 'PermitEmptyPasswords no' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "PermitEmptyPasswords", expect_in = ["no"], default = "no" }
+
+[[rule]]
+id = "HA-SSH-004"
+title = "Authentication attempts per connection are limited"
+section = "SSH"
+severity = "medium"
+why = "A low limit slows down password guessing within one connection."
+fix = "Set 'MaxAuthTries 4' (or lower) in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "MaxAuthTries", min = 1, max = 4, default = "6" }
+
+[[rule]]
+id = "HA-SSH-005"
+title = "Unauthenticated connections time out quickly"
+section = "SSH"
+severity = "low"
+why = "Connections that never log in hold a slot; a short grace period frees it."
+fix = "Set 'LoginGraceTime 60' (or lower) in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "LoginGraceTime", min = 1, max = 60, default = "120" }
+
+[[rule]]
+id = "HA-SSH-006"
+title = "X11 forwarding is off"
+section = "SSH"
+severity = "low"
+why = "X11 forwarding exposes the client's display to the server and the other way round; servers rarely need it."
+fix = "Set 'X11Forwarding no' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "X11Forwarding", expect_in = ["no"], default = "no" }
+
+[[rule]]
+id = "HA-SSH-007"
+title = "Idle SSH sessions are closed"
+section = "SSH"
+severity = "low"
+why = "A forgotten logged-in session is an open door. Keep-alive probes (ClientAliveInterval) end it when the client has gone."
+fix = "Set 'ClientAliveInterval 300' and 'ClientAliveCountMax 2' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "ClientAliveInterval", min = 1, max = 300, default = "0" }
+
+[[rule]]
+id = "HA-SSH-008"
+title = "SSH ignores .rhosts and .shosts files"
+section = "SSH"
+severity = "medium"
+why = "Trust files let a host log in without credentials."
+fix = "Set 'IgnoreRhosts yes' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "IgnoreRhosts", expect_in = ["yes"], default = "yes" }
+
+[[rule]]
+id = "HA-SSH-009"
+title = "Host-based authentication is off"
+section = "SSH"
+severity = "medium"
+why = "It trusts the client machine instead of the user."
+fix = "Set 'HostbasedAuthentication no' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "HostbasedAuthentication", expect_in = ["no"], default = "no" }
+
+[[rule]]
+id = "HA-SSH-010"
+title = "Users cannot set environment variables through SSH"
+section = "SSH"
+severity = "medium"
+why = "Variables such as LD_PRELOAD can be used to get around restricted shells and forced commands."
+fix = "Set 'PermitUserEnvironment no' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "PermitUserEnvironment", expect_in = ["no"], default = "no" }
+
+[[rule]]
+id = "HA-SSH-011"
+title = "SSH logs at INFO level or more"
+section = "SSH"
+severity = "low"
+why = "Logins and failures must be recorded to be investigated later. QUIET and FATAL hide them."
+fix = "Set 'LogLevel INFO' in /etc/ssh/sshd_config and reload sshd."
+check = { type = "config", files = ["/etc/ssh/sshd_config"], key = "LogLevel", expect_in = ["info", "verbose"], default = "INFO" }

@@ -1,0 +1,20 @@
+# hardaudit audit --rules-dir examples
+# One rule of each kind a site might add on top of the bundled ones.
+
+[[rule]]
+id = "HA-MY-001"
+title = "The backup directory is not world-writable"
+section = "Mine"
+severity = "medium"
+why = "Anyone who can write here can replace a backup."
+fix = "chmod o-w /srv/backup"
+check = { type = "file_mode", paths = ["/srv/backup"], max_mode = "0750", owner_uid = 0 }
+
+[[rule]]
+id = "HA-MY-002"
+title = "SSH only allows the admin group"
+section = "Mine"
+severity = "low"
+why = "Limits who can even try to log in."
+fix = "Add 'AllowGroups admins' to /etc/ssh/sshd_config and reload sshd."
+check = { type = "file_regex", paths = ["/etc/ssh/sshd_config"], require = '^\s*AllowGroups\s+admins\b' }

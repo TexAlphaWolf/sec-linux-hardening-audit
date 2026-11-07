@@ -1,0 +1,89 @@
+# Network parameters. "all" is checked: it is combined with each interface's own setting.
+
+[[rule]]
+id = "HA-NET-001"
+title = "The host does not forward IPv4 packets"
+section = "Network"
+severity = "medium"
+why = "Only routers, VPN gateways and container hosts should forward traffic. Anything else forwarding is an unintended path between networks."
+fix = "sysctl -w net.ipv4.ip_forward=0. Docker, Kubernetes and VPN servers need 1, so this is never applied automatically."
+check = { type = "sysctl", key = "net.ipv4.ip_forward", expect = "0" }
+
+[[rule]]
+id = "HA-NET-002"
+title = "ICMP redirects are not accepted"
+section = "Network"
+severity = "medium"
+why = "A forged redirect can steer this host's traffic through an attacker's machine."
+fix = "sysctl -w net.ipv4.conf.all.accept_redirects=0, and persist it."
+check = { type = "sysctl", key = "net.ipv4.conf.all.accept_redirects", expect = "0" }
+apply = { type = "sysctl", value = "0" }
+
+[[rule]]
+id = "HA-NET-003"
+title = "ICMP redirects are not sent"
+section = "Network"
+severity = "low"
+why = "A host that is not a router has no reason to tell others where to send packets."
+fix = "sysctl -w net.ipv4.conf.all.send_redirects=0, and persist it."
+check = { type = "sysctl", key = "net.ipv4.conf.all.send_redirects", expect = "0" }
+apply = { type = "sysctl", value = "0" }
+
+[[rule]]
+id = "HA-NET-004"
+title = "Source-routed packets are refused"
+section = "Network"
+severity = "medium"
+why = "Source routing lets the sender choose the path, which can bypass filtering."
+fix = "sysctl -w net.ipv4.conf.all.accept_source_route=0, and persist it."
+check = { type = "sysctl", key = "net.ipv4.conf.all.accept_source_route", expect = "0" }
+apply = { type = "sysctl", value = "0" }
+
+[[rule]]
+id = "HA-NET-005"
+title = "Packets with impossible source addresses are logged"
+section = "Network"
+severity = "low"
+why = "Spoofed or misrouted packets leave a trace in the kernel log."
+fix = "sysctl -w net.ipv4.conf.all.log_martians=1, and persist it."
+check = { type = "sysctl", key = "net.ipv4.conf.all.log_martians", expect = "1" }
+apply = { type = "sysctl", value = "1" }
+
+[[rule]]
+id = "HA-NET-006"
+title = "Reverse-path filtering is on"
+section = "Network"
+severity = "medium"
+why = "Drops packets whose source address could not have arrived on that interface, which blunts spoofing."
+fix = "sysctl -w net.ipv4.conf.all.rp_filter=1 (2, loose mode, also passes). Hosts with asymmetric routing need 2, so it is not applied automatically."
+check = { type = "sysctl", key = "net.ipv4.conf.all.rp_filter", expect_in = ["1", "2"] }
+
+[[rule]]
+id = "HA-NET-007"
+title = "SYN cookies are enabled"
+section = "Network"
+severity = "medium"
+why = "Keeps the host answering when a SYN flood fills the half-open connection queue."
+fix = "sysctl -w net.ipv4.tcp_syncookies=1, and persist it."
+check = { type = "sysctl", key = "net.ipv4.tcp_syncookies", expect = "1" }
+apply = { type = "sysctl", value = "1" }
+
+[[rule]]
+id = "HA-NET-008"
+title = "Broadcast ICMP echo requests are ignored"
+section = "Network"
+severity = "low"
+why = "Stops the host from being used as an amplifier in a smurf attack."
+fix = "sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1, and persist it."
+check = { type = "sysctl", key = "net.ipv4.icmp_echo_ignore_broadcasts", expect = "1" }
+apply = { type = "sysctl", value = "1" }
+
+[[rule]]
+id = "HA-NET-009"
+title = "Bogus ICMP error responses are ignored"
+section = "Network"
+severity = "low"
+why = "Stops log noise and a minor denial-of-service vector from malformed ICMP errors."
+fix = "sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1, and persist it."
+check = { type = "sysctl", key = "net.ipv4.icmp_ignore_bogus_error_responses", expect = "1" }
+apply = { type = "sysctl", value = "1" }

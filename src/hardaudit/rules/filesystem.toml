@@ -1,0 +1,47 @@
+# Kernel modules that are rarely needed, and mount options of world-writable places.
+
+[[rule]]
+id = "HA-FS-001"
+title = "The cramfs file system cannot be loaded"
+section = "Filesystem"
+severity = "low"
+why = "An obsolete file system driver is attack surface (a crafted image can reach kernel code) for no benefit."
+fix = "echo 'install cramfs /bin/true' > /etc/modprobe.d/hardaudit.conf (and rmmod it if loaded)."
+check = { type = "module", module = "cramfs" }
+apply = { type = "module_block" }
+
+[[rule]]
+id = "HA-FS-002"
+title = "The udf file system cannot be loaded"
+section = "Filesystem"
+severity = "low"
+why = "Same reason as cramfs. Disable it only if you never mount DVDs or UDF images."
+fix = "echo 'install udf /bin/true' >> /etc/modprobe.d/hardaudit.conf. Not applied automatically: some cloud images and media need it."
+check = { type = "module", module = "udf" }
+
+[[rule]]
+id = "HA-FS-003"
+title = "USB mass storage cannot be loaded"
+section = "Filesystem"
+severity = "low"
+why = "On a server nobody should plug in a disk; a blocked driver removes a way to bring in malware or take data out."
+fix = "echo 'install usb-storage /bin/true' >> /etc/modprobe.d/hardaudit.conf. Not applied automatically: it would also block a USB backup disk."
+check = { type = "module", module = "usb-storage" }
+
+[[rule]]
+id = "HA-FS-004"
+title = "/tmp is a separate mount with nodev, nosuid and noexec"
+section = "Filesystem"
+severity = "medium"
+why = "/tmp is writable by everyone. Without these options it can hold device files, setuid programs and executables that an attacker drops there."
+fix = "Mount /tmp as tmpfs (systemctl enable tmp.mount, or an /etc/fstab line 'tmpfs /tmp tmpfs defaults,nodev,nosuid,noexec 0 0')."
+check = { type = "mount", path = "/tmp", require = ["nodev", "nosuid", "noexec"] }
+
+[[rule]]
+id = "HA-FS-005"
+title = "/dev/shm is mounted with nodev, nosuid and noexec"
+section = "Filesystem"
+severity = "medium"
+why = "Shared memory is world-writable; it is a common place to stage code that should not run."
+fix = "Add 'tmpfs /dev/shm tmpfs defaults,nodev,nosuid,noexec 0 0' to /etc/fstab and run 'mount -o remount /dev/shm'."
+check = { type = "mount", path = "/dev/shm", require = ["nodev", "nosuid", "noexec"] }

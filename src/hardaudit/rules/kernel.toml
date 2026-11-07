@@ -1,0 +1,78 @@
+# Kernel parameters. Read from /proc/sys, so they describe the running kernel.
+
+[[rule]]
+id = "HA-KRN-001"
+title = "Address space layout randomisation is fully enabled"
+section = "Kernel"
+severity = "high"
+why = "Randomising where the stack, heap and libraries load makes memory-corruption exploits much less reliable."
+fix = "sysctl -w kernel.randomize_va_space=2, and put 'kernel.randomize_va_space = 2' in /etc/sysctl.d/."
+check = { type = "sysctl", key = "kernel.randomize_va_space", expect = "2" }
+apply = { type = "sysctl", value = "2" }
+
+[[rule]]
+id = "HA-KRN-002"
+title = "Processes that change privilege do not dump core"
+section = "Kernel"
+severity = "medium"
+why = "A core file from a setuid program can contain secrets such as password hashes or keys."
+fix = "sysctl -w fs.suid_dumpable=0, and persist it in /etc/sysctl.d/."
+check = { type = "sysctl", key = "fs.suid_dumpable", expect = "0" }
+apply = { type = "sysctl", value = "0" }
+
+[[rule]]
+id = "HA-KRN-003"
+title = "Ordinary users cannot read the kernel log"
+section = "Kernel"
+severity = "low"
+why = "The kernel log can reveal addresses and hardware details that help an attacker who already has a shell."
+fix = "sysctl -w kernel.dmesg_restrict=1, and persist it in /etc/sysctl.d/."
+check = { type = "sysctl", key = "kernel.dmesg_restrict", expect = "1" }
+apply = { type = "sysctl", value = "1" }
+
+[[rule]]
+id = "HA-KRN-004"
+title = "Kernel pointers are hidden from ordinary users"
+section = "Kernel"
+severity = "low"
+why = "Kernel addresses help defeat address randomisation inside the kernel."
+fix = "sysctl -w kernel.kptr_restrict=2 (1 is enough to pass this check)."
+check = { type = "sysctl", key = "kernel.kptr_restrict", min = 1 }
+
+[[rule]]
+id = "HA-KRN-005"
+title = "Process tracing (ptrace) is limited to a process's own children"
+section = "Kernel"
+severity = "low"
+why = "Without this, any process of a user can read the memory of that user's other processes, including a password manager or an SSH agent."
+fix = "sysctl -w kernel.yama.ptrace_scope=1. It stops 'gdb -p' on unrelated processes for non-root users, so it is not applied automatically."
+check = { type = "sysctl", key = "kernel.yama.ptrace_scope", min = 1 }
+
+[[rule]]
+id = "HA-KRN-006"
+title = "Hard links cannot be made to files the user does not own"
+section = "Kernel"
+severity = "medium"
+why = "Closes a class of attacks where a hard link to a setuid or privileged file is abused."
+fix = "sysctl -w fs.protected_hardlinks=1, and persist it in /etc/sysctl.d/."
+check = { type = "sysctl", key = "fs.protected_hardlinks", expect = "1" }
+apply = { type = "sysctl", value = "1" }
+
+[[rule]]
+id = "HA-KRN-007"
+title = "Symbolic links in sticky directories are not followed blindly"
+section = "Kernel"
+severity = "medium"
+why = "Closes the classic /tmp symlink race used to make a privileged program overwrite a file of the attacker's choice."
+fix = "sysctl -w fs.protected_symlinks=1, and persist it in /etc/sysctl.d/."
+check = { type = "sysctl", key = "fs.protected_symlinks", expect = "1" }
+apply = { type = "sysctl", value = "1" }
+
+[[rule]]
+id = "HA-KRN-008"
+title = "Unprivileged users cannot load eBPF programs"
+section = "Kernel"
+severity = "medium"
+why = "Unprivileged eBPF has been the entry point of several kernel privilege-escalation bugs."
+fix = "sysctl -w kernel.unprivileged_bpf_disabled=1 (2 also passes), and persist it. Some container tooling needs it off, so it is not applied automatically."
+check = { type = "sysctl", key = "kernel.unprivileged_bpf_disabled", min = 1 }

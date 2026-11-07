@@ -1,0 +1,71 @@
+# File permissions. The check accepts any mode that grants no more than the limit, so a
+# stricter distribution default (such as 0000 on /etc/shadow) passes.
+
+[[rule]]
+id = "HA-PRM-001"
+title = "/etc/passwd and /etc/group are writable by root only"
+section = "Permissions"
+severity = "high"
+why = "Anyone who can write these files can add a root account."
+fix = "chown root:root and chmod 644 /etc/passwd /etc/group."
+check = { type = "file_mode", paths = ["/etc/passwd", "/etc/group"], max_mode = "0644", owner_uid = 0 }
+apply = { type = "chmod" }
+
+[[rule]]
+id = "HA-PRM-002"
+title = "/etc/shadow and /etc/gshadow are not readable by others"
+section = "Permissions"
+severity = "high"
+why = "The password hashes live here; readable hashes can be cracked offline."
+fix = "chown root and chmod 640 (or 000 on RHEL family) /etc/shadow /etc/gshadow."
+check = { type = "file_mode", paths = ["/etc/shadow", "/etc/gshadow"], max_mode = "0640", owner_uid = 0 }
+apply = { type = "chmod" }
+
+[[rule]]
+id = "HA-PRM-003"
+title = "The SSH server configuration is private to root"
+section = "Permissions"
+severity = "medium"
+why = "It can reveal which accounts and options are allowed."
+fix = "chmod 600 /etc/ssh/sshd_config."
+check = { type = "file_mode", paths = ["/etc/ssh/sshd_config"], max_mode = "0600", owner_uid = 0 }
+apply = { type = "chmod" }
+
+[[rule]]
+id = "HA-PRM-004"
+title = "SSH private host keys are private to root"
+section = "Permissions"
+severity = "high"
+why = "A readable host key lets someone impersonate this server."
+fix = "chmod 600 /etc/ssh/ssh_host_*_key."
+check = { type = "file_mode", paths = ["/etc/ssh/ssh_host_*_key"], max_mode = "0600", owner_uid = 0 }
+apply = { type = "chmod" }
+
+[[rule]]
+id = "HA-PRM-005"
+title = "The system crontab is private to root"
+section = "Permissions"
+severity = "medium"
+why = "A writable crontab runs code as root."
+fix = "chmod 600 /etc/crontab."
+check = { type = "file_mode", paths = ["/etc/crontab"], max_mode = "0600", owner_uid = 0 }
+apply = { type = "chmod" }
+
+[[rule]]
+id = "HA-PRM-006"
+title = "The cron directories are private to root"
+section = "Permissions"
+severity = "medium"
+why = "A directory others can write to lets them drop a job that runs as root."
+fix = "chmod 700 /etc/cron.d /etc/cron.hourly /etc/cron.daily /etc/cron.weekly /etc/cron.monthly."
+check = { type = "file_mode", paths = ["/etc/cron.d", "/etc/cron.hourly", "/etc/cron.daily", "/etc/cron.weekly", "/etc/cron.monthly"], max_mode = "0700", owner_uid = 0 }
+apply = { type = "chmod" }
+
+[[rule]]
+id = "HA-PRM-007"
+title = "No remote-login trust files exist"
+section = "Permissions"
+severity = "high"
+why = "hosts.equiv and .rhosts make the old r-commands trust other machines without a password."
+fix = "Delete /etc/hosts.equiv, /etc/shosts.equiv and any ~/.rhosts."
+check = { type = "path_absent", paths = ["/etc/hosts.equiv", "/etc/shosts.equiv", "/root/.rhosts"] }
