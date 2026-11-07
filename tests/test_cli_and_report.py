@@ -10,7 +10,23 @@ from tests.fixtures import build_hardened, build_insecure
 
 
 @pytest.fixture
-def trees(tmp_path):
+def trees(tmp_path, monkeypatch):
+    # The CLI builds its own Host. Files made by the test user stand in for root-owned ones,
+    # as FixtureHost does, so the "owned by uid 0" rules behave the same as root or not.
+    import os
+
+    from hardaudit.host import Host
+
+    real = Host.stat
+
+    def as_root_owned(self, name):  # type: ignore[no-untyped-def]
+        info = real(self, name)
+        return (
+            None if info is None else (info[0], 0 if info[1] == os.getuid() else info[1], info[2])
+        )
+
+    if os.name == "posix":
+        monkeypatch.setattr(Host, "stat", as_root_owned)
     build_hardened(tmp_path / "good", "debian")
     build_insecure(tmp_path / "bad", "debian")
     return tmp_path

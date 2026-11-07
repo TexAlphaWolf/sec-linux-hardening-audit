@@ -18,7 +18,9 @@ PACKAGE_BAD = {
 
 
 def _read(root: Path, name: str) -> str:
-    return (root / name.lstrip("/")).read_text(encoding="utf-8")
+    path = root / name.lstrip("/")
+    path.chmod(path.stat().st_mode | 0o600)  # RHEL's shadow is mode 000; the test user owns it
+    return path.read_text(encoding="utf-8")
 
 
 def _bad_sysctl(spec: dict) -> str:  # type: ignore[type-arg]

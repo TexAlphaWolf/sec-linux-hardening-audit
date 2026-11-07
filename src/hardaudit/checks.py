@@ -291,8 +291,19 @@ def check_file_regex(host: Host, spec: dict[str, Any]) -> Outcome:
 
 # -- path_absent -----------------------------------------------------------------------------
 def check_path_absent(host: Host, spec: dict[str, Any]) -> Outcome:
-    present = [p for p in expand_paths(host, spec["paths"]) if host.exists(p)]
-    return ("fail", f"present: {', '.join(present)}") if present else ("pass", "none present")
+    present: list[str] = []
+    unreadable: list[str] = []
+    for path in expand_paths(host, spec["paths"]):
+        try:
+            if host.exists(path):
+                present.append(path)
+        except PermissionError:
+            unreadable.append(path)  # a directory we may not enter: we cannot say it is absent
+    if present:
+        return "fail", f"present: {', '.join(present)}"
+    if unreadable:
+        return "untestable", f"cannot look at {', '.join(unreadable)} (run as root)"
+    return "pass", "none present"
 
 
 CHECKS: dict[str, Check] = {

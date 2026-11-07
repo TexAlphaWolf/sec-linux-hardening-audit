@@ -58,13 +58,13 @@ jobs:
       matrix:
         include:
           - image: debian:12
-            prepare: apt-get update -q && apt-get install -y -q python3
+            prepare: apt-get update -q >/dev/null 2>&1 && apt-get install -y -q python3
             python: python3
           - image: debian:13
-            prepare: apt-get update -q && apt-get install -y -q python3
+            prepare: apt-get update -q >/dev/null 2>&1 && apt-get install -y -q python3
             python: python3
           - image: ubuntu:24.04
-            prepare: apt-get update -q && apt-get install -y -q python3
+            prepare: apt-get update -q >/dev/null 2>&1 && apt-get install -y -q python3
             python: python3
           - image: rockylinux:9
             prepare: dnf install -y -q python3.11
@@ -80,7 +80,7 @@ jobs:
             sh -c '${{ matrix.prepare }} >/dev/null && ${{ matrix.python }} -I /src/tools/system_check.py' | tee result.json
           python3 - <<'PY'
           import json
-          d = json.load(open("result.json"))
+          d = json.loads(open("result.json").read().strip().splitlines()[-1])  # the last line is the JSON
           assert d["errors"] == [], d["errors"]
           assert d["etc_differences_after_undo"] == [], d["etc_differences_after_undo"]
           assert d["counts"]["pass"] + d["counts"]["fail"] >= 25, d["counts"]

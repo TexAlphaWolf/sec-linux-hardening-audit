@@ -27,7 +27,13 @@ def audit(
             continue
         try:
             status, detail = CHECKS[rule.check["type"]](host, rule.check)
-        except (KeyError, TypeError, ValueError) as exc:
+        except PermissionError as exc:
+            # Whatever the check was reading is closed to this user: a result, not a crash.
+            status, detail = (
+                "untestable",
+                f"permission denied on {exc.filename} (run as root for a full audit)",
+            )
+        except (KeyError, TypeError, ValueError, OSError) as exc:
             status, detail = "error", f"rule {rule.id} is broken: {type(exc).__name__}: {exc}"
         report.results.append(Result(rule, status, detail))
     return report

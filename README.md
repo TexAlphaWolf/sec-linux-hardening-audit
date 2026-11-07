@@ -58,7 +58,7 @@ Every number comes from a script in this repository that CI re-runs. Details and
 | SSH settings as hardaudit reads them, against the real `sshd -T` (OpenSSH 9.6), 2,000 random configurations with duplicates, `Include`, `Match`, case and `=` | 22,000 values compared, **0 differences** |
 | Real system round trip: audit, fix, audit, undo, compare all of `/etc` | Ubuntu 24.04 VM: 597 files, **0 differences**, score 67.5 to 82.5. Debian 12 container: 157 files, **0 differences**, 71.9 to 79.8. Rocky 9.3 container: 238 files, **0 differences**, 73.0 to 78.4 |
 | Time for a full audit | about 4 ms on a fixture tree; 12 ms (Ubuntu), 4 ms (Debian), 39 ms (Rocky) on real systems |
-| Tests | 258 (2 skipped: a service state needs a running system), coverage above 90% (enforced) |
+| Tests | 260 (the 2 service-state tests skip on a directory tree; one more skips only as root), coverage above 90% (enforced), run as root and as an ordinary user |
 
 **What is *not* measured yet:** the round trip on Debian 13 and Alma 9, and the offline audit of exported images. They are CI jobs ("real system", "exported image" in [the Actions tab](https://github.com/TexAlphaWolf/sec-linux-hardening-audit/actions)). The test suite and `tools/evaluate.py` also passed inside a Debian 13 container (Python 3.14). Ubuntu was measured on a VM, Debian and Rocky in containers, which share the host kernel and cannot change it: there, 3 kernel settings are refused live, reported as warnings, and still saved in the sysctl file.
 

@@ -81,6 +81,8 @@ FSTAB_HARD = (
 def write(root: Path, name: str, text: str, mode: int = 0o644) -> Path:
     path = root / name.lstrip("/")
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and os.name == "posix":
+        path.chmod(0o644)  # a previous write may have made it read-only (sudoers, shadow)
     path.write_text(text, encoding="utf-8")
     if os.name == "posix":
         path.chmod(mode)

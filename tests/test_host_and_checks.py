@@ -175,3 +175,40 @@ def test_sysctl_files_are_read_in_systemd_order(tmp_path):
 
 def test_the_module_imports_cleanly():
     assert hostmod.family_of({}) == "other"
+
+
+def test_a_directory_the_user_may_not_enter_is_untestable_not_a_crash(tmp_path, monkeypatch):
+    from hardaudit import rules
+    from hardaudit.checks import check_path_absent
+    from hardaudit.engine import audit
+
+    host = Host(tmp_path)
+    real = Host.exists
+
+    def deny(self, name):  # type: ignore[no-untyped-def]
+        if name == "/root/.rhosts":
+            raise PermissionError(13, "Permission denied", name)
+        return real(self, name)
+
+    monkeypatch.setattr(Host, "exists", deny)
+    spec = {"paths": ["/etc/hosts.equiv", "/root/.rhosts"]}
+    assert check_path_absent(host, spec)[0] == "untestable"
+    write(tmp_path, "/etc/hosts.equiv", "+ +\n")
+    assert check_path_absent(host, spec)[0] == "fail"  # what we can see still decides
+    # and nothing in the whole rule set may escape as an exception
+    report = audit(host, rules.load())
+    assert report.count("error") == 0
+
+
+@posix_only
+def test_a_real_audit_as_an_ordinary_user_does_not_crash(capsys):
+    import os
+
+    if os.geteuid() == 0:
+        import pytest
+
+        pytest.skip("root can read everything; the case only exists for ordinary users")
+    from hardaudit import cli
+
+    assert cli.main(["audit", "--fail-on", "none"]) == 0
+    assert "hardaudit" in capsys.readouterr().out

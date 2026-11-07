@@ -21,7 +21,12 @@ def snapshot(root: Path) -> dict[str, tuple[str, int]]:
         rel = str(path.relative_to(root))
         if rel.startswith("var/lib/hardaudit"):
             continue
-        digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else "dir"
+        try:
+            digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else "dir"
+        except PermissionError:
+            digest = (
+                "unreadable"  # an ordinary user cannot read a mode 000 shadow; the mode is compared
+            )
         state[rel] = (digest, path.stat().st_mode & 0o7777)
     return state
 
