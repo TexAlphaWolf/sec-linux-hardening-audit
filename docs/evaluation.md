@@ -78,8 +78,15 @@ the host kernel and mounts `/proc/sys` read-only, so three kernel settings (`dme
 next `sysctl --system` or reboot; they are listed in `fixable_still_failing`. That is the intended
 behaviour. In the containers the untestable rule is the audit daemon's boot state, because there is no systemd.
 
-Each of these is one run on one image on one day. Debian 13, Alma 9 and the other images are CI jobs
-(Actions tab: "real system"), which had not run when this page was written.
+Each of these is one run on one image on one day.
+
+CI repeats the round trip on every push for Debian 12, Debian 13, Ubuntu 24.04, Rocky 9 and Alma 9, and
+fails unless: no check ended in an error, at least 25 rules could be judged, and `/etc` is byte-identical after
+undo. The offline audit of the exported file systems of Debian 12, Ubuntu 24.04 and Rocky 9 must detect the
+right family, have no errors, and judge at least 15 rules (most kernel settings and mounts cannot be known
+without a running kernel). All of these were green after the fixes in section 4. The thresholds are
+deliberately loose; they show that nothing crashes and the round trip is exact, not that the scores match
+the table above.
 
 ## 4. Things the measurements found
 
@@ -100,7 +107,7 @@ in my expectations.
 
 ## 5. What is not measured
 
-- Real systems other than the three in section 3 (Ubuntu 24.04 VM, Debian 12 and Rocky 9.3 containers), until the CI jobs have run. A real machine with systemd running, where the audit daemon and mounts can be read, is covered only by the Ubuntu VM.
+- Per-image numbers for Debian 13, Alma 9 and the CI runs of the others: CI checks them against loose thresholds, but only Ubuntu 24.04 (VM), Debian 12 and Rocky 9.3 (my containers) are tabulated above. A real machine with systemd running, where the audit daemon and mounts can be read, is covered only by the Ubuntu VM.
 - Distributions outside Debian/Ubuntu and the RHEL family.
 - Any OpenSSH version other than 9.6.
 - Whether the rules match what an auditor expects. They follow common topics but are not checked against a benchmark.

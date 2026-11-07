@@ -26,4 +26,4 @@ A weighted share of passed rules among the rules that could be judged (high 5, m
 
 ## What was verified where
 
-See [evaluation](evaluation.md). In short: the rules and fixes on fixture trees of both families; the real round trip on Ubuntu 24.04 (VM), Debian 12 and Rocky 9.3 (containers); the SSH comparison on Ubuntu 24.04 with OpenSSH 9.6. Debian 13, Alma 9, Ubuntu 24.04 containers and exported images are CI jobs.
+See [evaluation](evaluation.md). In short: the rules and fixes on fixture trees of both families; the real round trip on Ubuntu 24.04 (VM), Debian 12 and Rocky 9.3 (containers); the SSH comparison on Ubuntu 24.04 with OpenSSH 9.6. Debian 13, Alma 9 and Ubuntu 24.04 containers and the exported images of three distributions run in CI on every push.
